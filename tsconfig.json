@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "outDir": "build/compiled",
+    "outDir": "dist",
     "lib": [
       "es6"
     ],
