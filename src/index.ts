@@ -1,30 +1,42 @@
 import * as jieba from 'nodejieba';
 
+export interface ILocation {
+  name: string;
+  locations: string[];
+}
+
 export default class NLPTools {
   /**
    * 解析获取文本中的地址信息
    * @param text
    */
-  public static getLocations(text: string): null | string[] {
+  public static getLocations(text: string): null | ILocation[] {
     const splitWords = jieba.tag(text);
-    const locationList: string[] = [];
+    const locationList: ILocation[] = [];
 
     splitWords.forEach(({ word, tag }, index) => {
-      let locationTemp = '';
+      let locationName = '';
+      let locations: string[] = [];
       let count = index;
-      if (tag === 'ns') {
-        locationTemp = word;
+      let prevTag = index > 1 ? splitWords[index - 1] : null;
+      if (tag === 'ns' && prevTag.tag !== 'ns') {
+        locationName = word;
+        locations.push(word);
         count += 1;
         while (count < splitWords.length) {
           let nextItem = splitWords[count];
           if (nextItem.tag === 'ns' || nextItem.tag === 'n') {
-            locationTemp += nextItem.word;
+            locationName += nextItem.word;
+            locations.push(nextItem.word);
           } else {
             break;
           }
           count += 1;
         }
-        locationList.push(locationTemp);
+        locationList.push({
+          name: locationName,
+          locations,
+        });
       }
     });
     if (!locationList.length) return null;
