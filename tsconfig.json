@@ -11,7 +11,8 @@
     "experimentalDecorators": true,
     "sourceMap": true,
     "noImplicitAny": true,
-    "declaration": true
+    "declaration": true,
+    "strictNullChecks": true
   },
   "exclude": [
     "build",

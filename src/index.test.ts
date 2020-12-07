@@ -1,18 +1,56 @@
-import NLPTools from ".";
+import { Address } from './';
 
 describe('NLPTools', () => {
 
-  const testSentence = '急寻特朗普，男孩，于2018年11月27号11时在陕西省安康市汉滨区走失。丢失发型短发，...';
-  const testResult = [
-    {
-      name: '陕西省安康市汉滨区',
-      locations: [ '陕西省', '安康市', '汉滨区' ]
-    }
-  ];
+  describe('Address', () => {
 
-  it(`NLPTools.getLocations(testSentence)`, () => {
-    const result = NLPTools.getLocations(testSentence);
-    expect(result).toEqual(expect.arrayContaining(testResult));
+    const testSentence = '急寻特朗普，男孩，于2018年11月27号11时在陕西省安康市汉滨区走失。丢失发型短发，...';
+
+    it('Should throw run init first error', () => {
+      expect(() => Address.parse('陕西省安康市汉滨区')).toThrowError(new Error('请先执行初始化方法 Address.init()'));
+    });
+
+    it(`Address.extract(testSentence, false)`, async () => {
+      await Address.init();
+      const result = Address.extract(testSentence, false);
+      expect(result).toEqual(expect.arrayContaining([
+        {
+          name: '陕西省安康市汉滨区',
+          parse: null,
+        }
+      ]));
+    });
+
+    it(`Address.extract(testSentence, true)`, async () => {
+      await Address.init();
+      const result = Address.extract(testSentence, true);
+      expect(result).toEqual(expect.arrayContaining([
+        {
+          name: '陕西省安康市汉滨区',
+          parse: {
+            province: '陕西省',
+            adcode: '610902000000',
+            city: '安康市',
+            country: '汉滨区',
+            address: ''
+          }
+        }
+      ]));
+    });
+
+
+    it(`Address.parse('陕西省安康市汉滨区')`, async () => {
+      await Address.init();
+      const result = Address.parse('陕西省安康市汉滨区');
+      expect(result).toEqual(expect.objectContaining({
+        province: '陕西省',
+        adcode: '610902000000',
+        city: '安康市',
+        country: '汉滨区',
+        address: ''
+      }));
+    });
+
   });
 
 });
