@@ -1,4 +1,4 @@
-import { Address } from '../src';
+import { Address } from '../dist';
 
 async function main() {
   await Address.init();

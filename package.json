@@ -1,6 +1,6 @@
 {
   "name": "nlp-tools",
-  "version": "0.0.1-alpha.6",
+  "version": "0.0.1-alpha.17",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "license": "MIT",
@@ -16,21 +16,20 @@
     "url": "git@github.com:zhaofinger/nlp-tools.git"
   },
   "dependencies": {
-    "csvtojson": "^2.0.10",
     "nodejieba": "^2.5.1"
   },
   "devDependencies": {
     "@types/jest": "^26.0.16",
     "@types/node": "^14.14.10",
     "jest": "^26.6.3",
-    "parcel": "^2.0.0-beta.1",
+    "parcel": "^2.0.0-nightly.469",
     "ts-jest": "^26.4.4",
     "ts-node-dev": "^1.0.0",
     "typescript": "^4.1.2"
   },
   "scripts": {
     "start": "ts-node-dev --respawn --transpile-only ./example/index.ts",
-    "build": "rm -rf ./dist && parcel build ./src/index.ts --dist-dir ./dist --no-source-maps",
+    "build": "rm -rf ./dist && parcel build ./src/index.ts --no-source-maps --no-cache",
     "prepublishOnly": "npm run build",
     "test": "jest"
   }

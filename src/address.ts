@@ -1,11 +1,11 @@
 import * as jieba from 'nodejieba';
-import * as csvtojson from 'csvtojson';
+import adcodeJson from './resources/adcodes.json';
 
-interface ICsvAddress {
-  adcode: string;
+interface IAdcodeAddress {
+  adcode: number;
   name: string;
-  longitude?: string;
-  latitude?: string;
+  longitude: number | null;
+  latitude: number | null;
 }
 
 enum ADDRESS_TYPE {
@@ -40,7 +40,7 @@ export default class Address {
    * 前 6 位表示 区
    *
    */
-  static addressLib?: ICsvAddress[];
+  static addressLib?: IAdcodeAddress[];
 
   /**
    * 获取地址省市区类型
@@ -75,7 +75,7 @@ export default class Address {
    */
   private static findByAdcode(adCode: string) {
     const completeAdCode = `${adCode}${'0'.repeat(12 - adCode.length)}`;
-    return this.addressLib?.find(item => item.adcode === completeAdCode);
+    return this.addressLib?.find(item => `${item.adcode}` === completeAdCode);
   }
 
   /**
@@ -107,9 +107,9 @@ export default class Address {
     return addressRes;
   }
 
-  public static async init() {
+  public static init() {
     try {
-      const addressLib: ICsvAddress[] = await csvtojson().fromFile(`${__dirname}/resources/adcodes.csv`);
+      const addressLib = adcodeJson;
       this.addressLib = addressLib;
     } catch (error) {
       throw new Error(error);
@@ -123,18 +123,18 @@ export default class Address {
    */
   public static parse(address: string) {
     if (!this.addressLib) {
-      throw new Error('请先执行初始化方法 Address.init()');
+      this.init();
     }
     const addressWords = jieba.cut(address);
     let addressRes: Partial<IAddressInfo> = {};
     try {
-      const matchAddressList: (ICsvAddress & { type: ADDRESS_TYPE })[] = [];
+      const matchAddressList: (IAdcodeAddress & { type: ADDRESS_TYPE })[] = [];
       // 匹配原数据中的地址关键字
       for (let i = 0; i < addressWords.length; i++) {
         const item = addressWords[i];
-        const matchRes = this.addressLib.find(address => this.abbrName(address.name) === this.abbrName(item));
+        const matchRes = this.addressLib?.find(address => this.abbrName(address.name) === this.abbrName(item));
         if (matchRes) {
-          matchAddressList.push({ ...matchRes, type: this.getType(matchRes.adcode) });
+          matchAddressList.push({ ...matchRes, type: this.getType(`${matchRes.adcode}`) });
         } else {
           addressRes.address = addressWords.slice(i).join('');
           break;
@@ -146,7 +146,7 @@ export default class Address {
       // 地址文本
       let addressTemp = '';
       sortMathAddressList.forEach((item, index) => {
-        const extractItem = this.extractItem(item.adcode);
+        const extractItem = this.extractItem(`${item.adcode}`);
         if (index !== 0) {
           // 区
           if (item.type === ADDRESS_TYPE.city) {

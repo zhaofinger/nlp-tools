@@ -6,10 +6,6 @@ describe('NLPTools', () => {
 
     const testSentence = '急寻特朗普，男孩，于2018年11月27号11时在陕西省安康市汉滨区走失。丢失发型短发，...';
 
-    it('Should throw run init first error', () => {
-      expect(() => Address.parse('陕西省安康市汉滨区')).toThrowError(new Error('请先执行初始化方法 Address.init()'));
-    });
-
     it(`Address.extract(testSentence, false)`, async () => {
       await Address.init();
       const result = Address.extract(testSentence, false);
