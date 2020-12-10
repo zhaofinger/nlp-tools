@@ -65,7 +65,7 @@ export default class Address {
       '新疆维吾尔自治区': '新疆',
       '宁夏回族自治区': '宁夏',
     };
-    const addressStopRegex = /([省市]|特别行政区|自治区)$/;
+    const addressStopRegex = /([省市]|特别行政区|自治区|区|县)$/;
     return specialAbbrName[addressName] || addressName.split(addressStopRegex)[0];
   }
 
@@ -91,13 +91,13 @@ export default class Address {
     addressRes.province = matchProvinceAddress?.name;
 
     // 市
-    if (adCodeTemp[3] !== '0') {
+    if (adCodeTemp.substr(2, 2) !== '00') {
       const matchCityAddress = this.findByAdcode(adCodeTemp.substr(0, 4));
       addressRes.city = matchCityAddress?.name;
     }
 
     // 区
-    if (adCodeTemp[5] !== '0') {
+    if (adCodeTemp.substr(4, 2) !== '00') {
       const matchCountryAddress = this.findByAdcode(adCodeTemp);
       addressRes.country = matchCountryAddress?.name;
     }
@@ -132,9 +132,9 @@ export default class Address {
       // 匹配原数据中的地址关键字
       for (let i = 0; i < addressWords.length; i++) {
         const item = addressWords[i];
-        const matchRes = this.addressLib?.find(address => this.abbrName(address.name) === this.abbrName(item));
-        if (matchRes) {
-          matchAddressList.push({ ...matchRes, type: this.getType(`${matchRes.adcode}`) });
+        const matchResList = this.addressLib?.filter(address => this.abbrName(address.name) === this.abbrName(item));
+        if (matchResList?.length) {
+          matchResList.forEach(matchRes => matchAddressList.push({ ...matchRes, type: this.getType(`${matchRes.adcode}`) }));
         } else {
           addressRes.address = addressWords.slice(i).join('');
           break;
@@ -142,9 +142,10 @@ export default class Address {
       }
 
       // 按省市区排序
-      const sortMathAddressList = matchAddressList.sort((a, b) => Number(Boolean(a.type - b.type)));
+      const sortMathAddressList = matchAddressList.sort((a, b) => a.type - b.type);
       // 地址文本
       let addressTemp = '';
+
       sortMathAddressList.forEach((item, index) => {
         const extractItem = this.extractItem(`${item.adcode}`);
         if (index !== 0) {
