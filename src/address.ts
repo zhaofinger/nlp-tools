@@ -1,25 +1,19 @@
 import * as jieba from 'nodejieba';
-import adcodeJson from './resources/adcodes.json';
+import { data as addressData, IAddressData } from 'province-city-china/data';
 
-interface IAdcodeAddress {
-  adcode: number;
-  name: string;
-  longitude: number | null;
-  latitude: number | null;
-}
 
 enum ADDRESS_TYPE {
   province = 0,
   city = 1,
-  country = 2,
+  area = 2,
 }
 
 export interface IAddressInfo {
+  code: string;
   province: string;
   city?: string;
-  country?: string;
+  area?: string;
   address?: string;
-  adcode: string;
 }
 
 export interface IExtractAddress {
@@ -40,17 +34,17 @@ export default class Address {
    * 前 6 位表示 区
    *
    */
-  static addressLib?: IAdcodeAddress[];
+  static addressLib?: IAddressData[];
 
   /**
    * 获取地址省市区类型
    * @param adCode
    */
-  private static getType(adCode: string) {
-    const adCodeTemp = adCode.substr(0, 6);
+  private static getType(code: string) {
+    const adCodeTemp = code.substr(0, 6);
     if (adCodeTemp.endsWith('0000')) return ADDRESS_TYPE.province;
     if (adCodeTemp.endsWith('00')) return ADDRESS_TYPE.city;
-    return ADDRESS_TYPE.country;
+    return ADDRESS_TYPE.area;
   }
 
   /**
@@ -71,46 +65,43 @@ export default class Address {
 
   /**
    * 根据 adcode 查找地址
-   * @param adCode
+   * @param code
    */
-  private static findByAdcode(adCode: string) {
-    const completeAdCode = `${adCode}${'0'.repeat(12 - adCode.length)}`;
-    return this.addressLib?.find(item => `${item.adcode}` === completeAdCode);
+  private static findByAdcode(code: string) {
+    return this.addressLib?.find(item => item.code === code);
   }
 
   /**
    * 解析地址 item 详情
-   * @param adCode
+   * @param item
    */
-  private static extractItem(adCode: string) {
-    const adCodeTemp = adCode.substr(0, 6);
+  private static extractItem(item: IAddressData) {
     const addressRes: Partial<IAddressInfo> = {};
 
     // 省
-    const matchProvinceAddress = this.findByAdcode(adCodeTemp.substr(0, 2));
+    const matchProvinceAddress = this.findByAdcode(`${item.province}0000`);
     addressRes.province = matchProvinceAddress?.name;
 
     // 市
-    if (adCodeTemp.substr(2, 2) !== '00') {
-      const matchCityAddress = this.findByAdcode(adCodeTemp.substr(0, 4));
+    if (item.city) {
+      const matchCityAddress = this.findByAdcode(`${item.province}${item.city}00`);
       addressRes.city = matchCityAddress?.name;
     }
 
     // 区
-    if (adCodeTemp.substr(4, 2) !== '00') {
-      const matchCountryAddress = this.findByAdcode(adCodeTemp);
-      addressRes.country = matchCountryAddress?.name;
+    if (item.area) {
+      const matchCountryAddress = this.findByAdcode(`${item.code}`);
+      addressRes.area = matchCountryAddress?.name;
     }
 
-    addressRes.adcode = adCode;
+    addressRes.code = item.code;
 
     return addressRes;
   }
 
   public static init() {
     try {
-      const addressLib = adcodeJson;
-      this.addressLib = addressLib;
+      this.addressLib = addressData;
     } catch (error) {
       throw new Error(error);
     }
@@ -128,13 +119,13 @@ export default class Address {
     const addressWords = jieba.cut(address);
     let addressRes: Partial<IAddressInfo> = {};
     try {
-      const matchAddressList: (IAdcodeAddress & { type: ADDRESS_TYPE })[] = [];
+      const matchAddressList: (IAddressData & { type: ADDRESS_TYPE })[] = [];
       // 匹配原数据中的地址关键字
       for (let i = 0; i < addressWords.length; i++) {
         const item = addressWords[i];
         const matchResList = this.addressLib?.filter(address => this.abbrName(address.name) === this.abbrName(item));
         if (matchResList?.length) {
-          matchResList.forEach(matchRes => matchAddressList.push({ ...matchRes, type: this.getType(`${matchRes.adcode}`) }));
+          matchResList.forEach(matchRes => matchAddressList.push({ ...matchRes, type: this.getType(`${matchRes.code}`) }));
         } else {
           addressRes.address = addressWords.slice(i).join('');
           break;
@@ -147,25 +138,25 @@ export default class Address {
       let addressTemp = '';
 
       sortMathAddressList.forEach((item, index) => {
-        const extractItem = this.extractItem(`${item.adcode}`);
+        const extractItem = this.extractItem(item);
         if (index !== 0) {
           // 区
           if (item.type === ADDRESS_TYPE.city) {
             if (extractItem.province === addressRes.province) {
               addressRes.city = extractItem.city;
-              addressRes.adcode = extractItem.adcode;
+              addressRes.code = extractItem.code;
             } else {
               addressTemp += extractItem.city || '';
             }
           }
           // 区
-          if (item.type === ADDRESS_TYPE.country) {
+          if (item.type === ADDRESS_TYPE.area) {
             if (extractItem.province === addressRes.province) {
               addressRes.city = extractItem.city;
-              addressRes.country = extractItem.country;
-              addressRes.adcode = extractItem.adcode;
+              addressRes.area = extractItem.area;
+              addressRes.code = extractItem.code;
             } else {
-              addressTemp += addressRes.country || '';
+              addressTemp += addressRes.area || '';
             }
           }
         } else {

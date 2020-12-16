@@ -16,7 +16,8 @@
     "url": "git@github.com:zhaofinger/nlp-tools.git"
   },
   "dependencies": {
-    "nodejieba": "^2.5.1"
+    "nodejieba": "^2.5.1",
+    "province-city-china": "^7.0.0"
   },
   "devDependencies": {
     "@types/jest": "^26.0.16",
